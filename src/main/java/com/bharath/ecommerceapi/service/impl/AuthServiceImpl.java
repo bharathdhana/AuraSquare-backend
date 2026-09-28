@@ -3,6 +3,7 @@ package com.bharath.ecommerceapi.service.impl;
 import com.bharath.ecommerceapi.exception.BadRequestException;
 import com.bharath.ecommerceapi.model.Cart;
 import com.bharath.ecommerceapi.model.User;
+import com.bharath.ecommerceapi.model.UserPrincipal;
 import com.bharath.ecommerceapi.model.Wishlist;
 import com.bharath.ecommerceapi.model.dto.request.LoginRequest;
 import com.bharath.ecommerceapi.model.dto.request.RegisterRequest;
@@ -66,12 +67,15 @@ public class AuthServiceImpl implements IAuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         if (authentication.isAuthenticated()) {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             return AuthResponse.builder()
                     .token(jwtService.generateToken(request.getEmail()))
+                    .role(userPrincipal.getUser().getRole().name())
                     .build();
         }
         return AuthResponse.builder()
                 .token("")
+                .role("")
                 .build();
     }
 }
