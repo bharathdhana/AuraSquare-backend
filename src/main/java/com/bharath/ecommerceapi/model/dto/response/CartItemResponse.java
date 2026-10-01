@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CartItemResponse {
     private Long id;
+    private Long productId;
     private int quantity;
     private Double productPrice;
     private String productTitle;

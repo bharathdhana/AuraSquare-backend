@@ -8,13 +8,16 @@ import com.bharath.ecommerceapi.model.dto.request.ProductRequest;
 import com.bharath.ecommerceapi.model.dto.response.ProductResponse;
 import com.bharath.ecommerceapi.model.enums.Role;
 import com.bharath.ecommerceapi.repo.ProductRepository;
+import com.bharath.ecommerceapi.service.inf.ICloudinaryService;
 import com.bharath.ecommerceapi.service.inf.IProductService;
 import com.bharath.ecommerceapi.service.inf.IUserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +26,7 @@ public class ProductServiceImpl implements IProductService {
 
     private final ProductRepository productRepository;
     private final IUserService userService;
+    private final ICloudinaryService cloudinaryService;
 
     @Override
     public List<ProductResponse> getAllProducts() {
@@ -56,11 +60,14 @@ public class ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public String createProduct(ProductRequest request) {
+    public String createProduct(ProductRequest request, MultipartFile image) {
         User currentUser = userService.getCurrentUser();
-        if(currentUser.getRole() != Role.SELLER) {
+        if (currentUser.getRole() != Role.SELLER) {
             throw new UnAuthorizedException("Access Denied! Only SELLER's can perform this operation");
         }
+
+        Map<String, String> uploadedImage = cloudinaryService.uploadImage(image);
+
         Product product = Product.builder()
                 .title(request.getTitle())
                 .brand(request.getBrand())
@@ -69,7 +76,8 @@ public class ProductServiceImpl implements IProductService {
                 .price(request.getPrice())
                 .stockQuantity(request.getStockQuantity())
                 .category(request.getCategory())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(uploadedImage.get("secureUrl"))
+                .imagePublicId(uploadedImage.get("publicId"))
                 .seller(currentUser)
                 .build();
         productRepository.save(product);
@@ -78,13 +86,14 @@ public class ProductServiceImpl implements IProductService {
 
     @Override
     @Transactional
-    public String updateProduct(Long id, ProductRequest request) {
+    public String updateProduct(Long id, ProductRequest request, MultipartFile image) {
         Product product = productRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + id));
         User currentUser = userService.getCurrentUser();
-        if(!(product.getSeller().getId().equals(currentUser.getId())) && currentUser.getRole() != Role.ADMIN) {
+        if (!(product.getSeller().getId().equals(currentUser.getId())) && currentUser.getRole() != Role.ADMIN) {
             throw new UnAuthorizedException("Access Denied! Only SELLER's of this Product or ADMIN can ONLY perform this operation");
         }
+
         product.setTitle(request.getTitle());
         product.setBrand(request.getBrand());
         product.setModel(request.getModel());
@@ -92,8 +101,15 @@ public class ProductServiceImpl implements IProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setCategory(request.getCategory());
-        product.setImageUrl(request.getImageUrl());
-//        productRepository.save(product);
+
+        if (image != null && !image.isEmpty()) {
+            String previousPublicId = product.getImagePublicId();
+            Map<String, String> uploadedImage = cloudinaryService.uploadImage(image);
+            product.setImageUrl(uploadedImage.get("secureUrl"));
+            product.setImagePublicId(uploadedImage.get("publicId"));
+            cloudinaryService.deleteImage(previousPublicId);
+        }
+
         return "Product Updated Successfully";
     }
 
@@ -103,10 +119,13 @@ public class ProductServiceImpl implements IProductService {
         Product product = productRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + id));
         User currentUser = userService.getCurrentUser();
-        if(!(product.getSeller().getId().equals(currentUser.getId())) && currentUser.getRole() != Role.ADMIN) {
+        if (!(product.getSeller().getId().equals(currentUser.getId())) && currentUser.getRole() != Role.ADMIN) {
             throw new UnAuthorizedException("Access Denied! Only SELLER's of this Product or ADMIN can ONLY perform this operation");
         }
+
+        String imagePublicId = product.getImagePublicId();
         productRepository.delete(product);
+        cloudinaryService.deleteImage(imagePublicId);
         return "Product Deleted Successfully";
     }
 

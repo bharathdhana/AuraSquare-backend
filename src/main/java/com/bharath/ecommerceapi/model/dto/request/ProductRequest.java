@@ -35,7 +35,4 @@ public class ProductRequest {
 
     @NotBlank(message = "category is mandatory")
     private String category;
-
-    @NotBlank(message = "imageUrl is mandatory")
-    private String imageUrl;
 }

@@ -33,23 +33,24 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public String addToCart(CartItemRequest request) {
         User currentUser = userService.getCurrentUser();
-        Cart cart = cartRepository.findByUserId(currentUser.getId())
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseGet(() -> createCartForUser(currentUser));
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + request.getProductId()));
         if (product.getStockQuantity() < request.getQuantity()) {
             throw new BadRequestException("Product Stock Not Available at this Moment!");
         }
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId()).orElse(null);
+        CartItem cartItem = cartItemRepository.findFirstByCartIdAndProductIdOrderByIdAsc(cart.getId(), product.getId()).orElse(null);
         if (cartItem != null) {
             cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
+        } else {
+            cartItem = CartItem.builder()
+                    .quantity(request.getQuantity())
+                    .cart(cart)
+                    .product(product)
+                    .build();
+            cart.addItem(cartItem);
         }
-        cartItem = CartItem.builder()
-                .quantity(request.getQuantity())
-                .cart(cart)
-                .product(product)
-                .build();
-        cart.addItem(cartItem);
 
         cartRepository.save(cart);
         return "Product Added to Cart Successfully!";
@@ -59,9 +60,9 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse updateCart(CartItemRequest request) {
         User currentUser = userService.getCurrentUser();
-        Cart cart = cartRepository.findByUserId(currentUser.getId())
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cart Not Found"));
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), request.getProductId())
+        CartItem cartItem = cartItemRepository.findFirstByCartIdAndProductIdOrderByIdAsc(cart.getId(), request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product Not Found in Cart"));
         if (request.getQuantity() == 0) {
             cart.removeItem(cartItem);
@@ -80,7 +81,7 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse getCart() {
         User currentUser = userService.getCurrentUser();
-        Cart cart = cartRepository.findByUserId(currentUser.getId())
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseGet(() -> createCartForUser(currentUser));
         return mapToCartResponse(cart);
     }
@@ -88,7 +89,7 @@ public class CartServiceImpl implements ICartService {
     @Override
     public CartResponse removeFromCart(Long productId) {
         User currentUser = userService.getCurrentUser();
-        Cart cart = cartRepository.findByUserId(currentUser.getId())
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cart Not Found"));
         CartItem cartItem = cartItemRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product Not Found in Cart"));
@@ -126,6 +127,7 @@ public class CartServiceImpl implements ICartService {
         subtotal = cartItem.getProduct().getPrice() * cartItem.getQuantity();
         return CartItemResponse.builder()
                 .id(cartItem.getId())
+                .productId(cartItem.getProduct().getId())
                 .quantity(cartItem.getQuantity())
                 .productPrice(cartItem.getProduct().getPrice())
                 .productTitle(cartItem.getProduct().getTitle())

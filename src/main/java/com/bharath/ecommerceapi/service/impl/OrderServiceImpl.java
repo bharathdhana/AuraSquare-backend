@@ -35,7 +35,7 @@ public class OrderServiceImpl implements IOrderService {
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
         User currentUser = userService.getCurrentUser();
-        Cart cart = cartRepository.findByUserId(currentUser.getId()).orElseThrow(
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("Cart not found"));
         if (cart.getItems().isEmpty()) {
             throw new BadRequestException("Cart is empty");

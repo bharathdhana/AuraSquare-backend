@@ -31,7 +31,7 @@ public class WishlistServiceImpl implements IWishlistService {
     @Transactional
     public String addToWishlist(WishlistItemRequest request) {
         User currentUser = userService.getCurrentUser();
-        Wishlist wishlist =  wishlistRepository.findByUserId(currentUser.getId())
+        Wishlist wishlist =  wishlistRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseGet(()-> createWishlistForUser(currentUser));
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + request.getProductId()));
@@ -54,7 +54,7 @@ public class WishlistServiceImpl implements IWishlistService {
     @Override
     public WishlistResponse getWishlist() {
         User currentUser = userService.getCurrentUser();
-        Wishlist wishlist =  wishlistRepository.findByUserId(currentUser.getId())
+        Wishlist wishlist =  wishlistRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseGet(()-> createWishlistForUser(currentUser));
         return mapToWishlistResponse(wishlist);
     }
@@ -63,7 +63,7 @@ public class WishlistServiceImpl implements IWishlistService {
     @Transactional
     public WishlistResponse removeFromWishlist(Long id) {
         User currentUser = userService.getCurrentUser();
-        Wishlist wishlist = wishlistRepository.findByUserId(currentUser.getId())
+        Wishlist wishlist = wishlistRepository.findFirstByUserIdOrderByIdAsc(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wishlist Not Found"));
         WishlistItem wishlistItem = wishlistItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Wishlist item Not Found"));
