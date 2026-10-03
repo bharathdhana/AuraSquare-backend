@@ -60,13 +60,11 @@ public class ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public String createProduct(ProductRequest request, MultipartFile image) {
+    public String createProduct(ProductRequest request) {
         User currentUser = userService.getCurrentUser();
         if (currentUser.getRole() != Role.SELLER) {
             throw new UnAuthorizedException("Access Denied! Only SELLER's can perform this operation");
         }
-
-        Map<String, String> uploadedImage = cloudinaryService.uploadImage(image);
 
         Product product = Product.builder()
                 .title(request.getTitle())
@@ -76,8 +74,7 @@ public class ProductServiceImpl implements IProductService {
                 .price(request.getPrice())
                 .stockQuantity(request.getStockQuantity())
                 .category(request.getCategory())
-                .imageUrl(uploadedImage.get("secureUrl"))
-                .imagePublicId(uploadedImage.get("publicId"))
+                .imageUrl(request.getImageUrl())
                 .seller(currentUser)
                 .build();
         productRepository.save(product);

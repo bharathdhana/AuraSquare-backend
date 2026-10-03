@@ -12,7 +12,7 @@ public interface IProductService {
     List<ProductResponse> getProductsByCategory(String category);
     List<ProductResponse> getProductsByPriceRange(Double minPrice, Double maxPrice);
     List<ProductResponse> searchProducts(String keyword);
-    String createProduct(ProductRequest request, MultipartFile image);
+    String createProduct(ProductRequest request);
     String updateProduct(Long id, ProductRequest request, MultipartFile image);
     String deleteProduct(Long id);
 }

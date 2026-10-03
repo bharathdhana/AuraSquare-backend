@@ -50,12 +50,10 @@ public class ProductController {
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<String> createProduct(
-            @Valid @RequestPart("product") ProductRequest request,
-            @RequestPart("image") MultipartFile image) {
-        String response = productService.createProduct(request, image);
+    public ResponseEntity<String> createProduct(@Valid @RequestBody ProductRequest request) {
+        String response = productService.createProduct(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
