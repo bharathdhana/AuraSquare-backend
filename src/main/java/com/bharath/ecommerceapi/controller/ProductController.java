@@ -57,17 +57,17 @@ public class ProductController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<String> updateProduct(
-            @RequestParam Long id,
-            @Valid @RequestPart("product") ProductRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        String response = productService.updateProduct(id, request, image);
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
+        String response = productService.updateProduct(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
         String response = productService.deleteProduct(id);
         return new ResponseEntity<>(response, HttpStatus.OK);

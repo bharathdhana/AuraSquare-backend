@@ -13,6 +13,6 @@ public interface IProductService {
     List<ProductResponse> getProductsByPriceRange(Double minPrice, Double maxPrice);
     List<ProductResponse> searchProducts(String keyword);
     String createProduct(ProductRequest request);
-    String updateProduct(Long id, ProductRequest request, MultipartFile image);
+    String updateProduct(Long id, ProductRequest request);
     String deleteProduct(Long id);
 }

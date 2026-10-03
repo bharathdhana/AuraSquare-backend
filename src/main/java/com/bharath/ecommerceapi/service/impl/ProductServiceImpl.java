@@ -4,6 +4,9 @@ import com.bharath.ecommerceapi.exception.ResourceNotFoundException;
 import com.bharath.ecommerceapi.exception.UnAuthorizedException;
 import com.bharath.ecommerceapi.model.Product;
 import com.bharath.ecommerceapi.model.User;
+import com.bharath.ecommerceapi.model.CartItem;
+import com.bharath.ecommerceapi.model.OrderItem;
+import com.bharath.ecommerceapi.model.WishlistItem;
 import com.bharath.ecommerceapi.model.dto.request.ProductRequest;
 import com.bharath.ecommerceapi.model.dto.response.ProductResponse;
 import com.bharath.ecommerceapi.model.enums.Role;
@@ -83,7 +86,7 @@ public class ProductServiceImpl implements IProductService {
 
     @Override
     @Transactional
-    public String updateProduct(Long id, ProductRequest request, MultipartFile image) {
+    public String updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + id));
         User currentUser = userService.getCurrentUser();
@@ -98,14 +101,7 @@ public class ProductServiceImpl implements IProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setCategory(request.getCategory());
-
-        if (image != null && !image.isEmpty()) {
-            String previousPublicId = product.getImagePublicId();
-            Map<String, String> uploadedImage = cloudinaryService.uploadImage(image);
-            product.setImageUrl(uploadedImage.get("secureUrl"));
-            product.setImagePublicId(uploadedImage.get("publicId"));
-            cloudinaryService.deleteImage(previousPublicId);
-        }
+        product.setImageUrl(request.getImageUrl());
 
         return "Product Updated Successfully";
     }
@@ -120,9 +116,32 @@ public class ProductServiceImpl implements IProductService {
             throw new UnAuthorizedException("Access Denied! Only SELLER's of this Product or ADMIN can ONLY perform this operation");
         }
 
+        try {
+            productRepository.dropNotNullConstraintOnOrderItems();
+            productRepository.dropNotNullConstraintOnCartItems();
+            productRepository.dropNotNullConstraintOnWishlistItems();
+        } catch (Exception ignored) {}
+
+        for (OrderItem item : product.getOrderItems()) {
+            item.setProduct(null);
+        }
+        for (CartItem item : product.getCartItems()) {
+            item.setProduct(null);
+        }
+        for (WishlistItem item : product.getWishlistItems()) {
+            item.setProduct(null);
+        }
+
         String imagePublicId = product.getImagePublicId();
         productRepository.delete(product);
-        cloudinaryService.deleteImage(imagePublicId);
+
+        if (imagePublicId != null && !imagePublicId.trim().isEmpty()) {
+            try {
+                cloudinaryService.deleteImage(imagePublicId);
+            } catch (Exception e) {
+                // ignore image deletion failure for external URLs
+            }
+        }
         return "Product Deleted Successfully";
     }
 
