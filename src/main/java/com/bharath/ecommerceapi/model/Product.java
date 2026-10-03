@@ -45,8 +45,6 @@ public class Product {
     @Column(nullable = false)
     private String imageUrl;
 
-    private String imagePublicId;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

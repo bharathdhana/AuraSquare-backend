@@ -32,9 +32,10 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
                             CorsConfiguration config = new CorsConfiguration();
-                            config.addAllowedOrigin("http://localhost:4200/");
-                            config.addAllowedHeader("*");
-                            config.addAllowedMethod("*");
+                            config.setAllowedOriginPatterns(java.util.List.of("http://localhost:4200", "http://localhost:4200/*"));
+                            config.setAllowedHeaders(java.util.List.of("*"));
+                            config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                            config.setAllowCredentials(true);
                             config.setMaxAge(3600L);
                             return config;
                         }

@@ -11,13 +11,11 @@ import com.bharath.ecommerceapi.model.dto.request.ProductRequest;
 import com.bharath.ecommerceapi.model.dto.response.ProductResponse;
 import com.bharath.ecommerceapi.model.enums.Role;
 import com.bharath.ecommerceapi.repo.ProductRepository;
-import com.bharath.ecommerceapi.service.inf.ICloudinaryService;
 import com.bharath.ecommerceapi.service.inf.IProductService;
 import com.bharath.ecommerceapi.service.inf.IUserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +27,6 @@ public class ProductServiceImpl implements IProductService {
 
     private final ProductRepository productRepository;
     private final IUserService userService;
-    private final ICloudinaryService cloudinaryService;
 
     @Override
     public List<ProductResponse> getAllProducts() {
@@ -132,16 +129,7 @@ public class ProductServiceImpl implements IProductService {
             item.setProduct(null);
         }
 
-        String imagePublicId = product.getImagePublicId();
         productRepository.delete(product);
-
-        if (imagePublicId != null && !imagePublicId.trim().isEmpty()) {
-            try {
-                cloudinaryService.deleteImage(imagePublicId);
-            } catch (Exception e) {
-                // ignore image deletion failure for external URLs
-            }
-        }
         return "Product Deleted Successfully";
     }
 

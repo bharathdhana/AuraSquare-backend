@@ -38,6 +38,15 @@ public class UserServiceImpl implements IUserService {
                 .orElseThrow(() -> new UnAuthorizedException("User Not Found"));
     }
 
+    @Override
+    @jakarta.transaction.Transactional
+    public String deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User Not Found for the Given ID: " + id));
+        userRepository.delete(user);
+        return "User Deleted Successfully";
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())

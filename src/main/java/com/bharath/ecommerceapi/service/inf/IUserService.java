@@ -9,5 +9,6 @@ public interface IUserService {
     List<UserResponse> getUsers();
     UserResponse getUserById(Long id);
     User getCurrentUser();
+    String deleteUser(Long id);
 }
 
