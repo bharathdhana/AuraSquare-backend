@@ -37,7 +37,7 @@ public class WishlistServiceImpl implements IWishlistService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product Not Found for the Given ID: " + request.getProductId()));
 
         boolean isAlreadyExist = wishlist.getWishlistItems().stream()
-                .anyMatch(item -> item.getProduct().getId().equals(request.getProductId()));
+                .anyMatch(item -> item.getProduct() != null && item.getProduct().getId() != null && item.getProduct().getId().equals(request.getProductId()));
         if(isAlreadyExist){
             throw new BadRequestException("Product Already Exists");
         }
@@ -76,16 +76,20 @@ public class WishlistServiceImpl implements IWishlistService {
 
     private WishlistResponse mapToWishlistResponse(Wishlist wishlist) {
         List<WishlistItemResponse> wishItems = wishlist.getWishlistItems().stream()
+                .filter(item -> item != null && item.getProduct() != null)
                 .map(this::mapToWishlistItemResponse).toList();
-        return WishlistResponse.builder().
-                wishlistItems(wishItems)
+        return WishlistResponse.builder()
+                .wishlistItems(wishItems)
                 .build();
     }
 
     private WishlistItemResponse mapToWishlistItemResponse(WishlistItem wishlistItem) {
+        ProductResponse productResp = (wishlistItem != null && wishlistItem.getProduct() != null)
+                ? mapToProductResponse(wishlistItem.getProduct())
+                : null;
         return WishlistItemResponse.builder()
-                .id(wishlistItem.getId())
-                .product(mapToProductResponse(wishlistItem.getProduct()))
+                .id(wishlistItem != null ? wishlistItem.getId() : null)
+                .product(productResp)
                 .build();
     }
 
@@ -98,6 +102,12 @@ public class WishlistServiceImpl implements IWishlistService {
     }
 
     private ProductResponse mapToProductResponse(Product product) {
+        if (product == null) return null;
+        Long sellerId = (product.getSeller() != null) ? product.getSeller().getId() : null;
+        String sellerName = (product.getSeller() != null)
+                ? (product.getSeller().getFirstName() + " " + product.getSeller().getLastName()).trim()
+                : "";
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .title(product.getTitle())
@@ -108,8 +118,8 @@ public class WishlistServiceImpl implements IWishlistService {
                 .stockQuantity(product.getStockQuantity())
                 .category(product.getCategory())
                 .imageUrl(product.getImageUrl())
-                .sellerId(product.getSeller().getId())
-                .sellerName(product.getSeller().getFirstName() + " " + product.getSeller().getLastName())
+                .sellerId(sellerId)
+                .sellerName(sellerName)
                 .build();
     }
 }
